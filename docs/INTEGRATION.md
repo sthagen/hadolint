@@ -15,6 +15,7 @@ with the repository attached to it:
 ```yaml
 hadolint:
   image: hadolint/hadolint:latest-debian
+  # image: ghcr.io/hadolint/hadolint:latest-debian
   volumes:
     - ./:/test
 ```
@@ -29,6 +30,11 @@ Then add the CI step on codeship-steps.yml with the path of the dockerfile
     - service: hadolint
       command: hadolint /test/Dockerfile
 ```
+
+### Mega-Linter
+
+[Mega-Linter](https://nvuillam.github.io/mega-linter/) aggregates 70 linters, including [hadolint](
+https://nvuillam.github.io/mega-linter/descriptors/dockerfile_hadolint/) out of the box.
 
 ## Continuous Integration
 
@@ -88,9 +94,32 @@ Add the following job to your project's `.gitlab-ci.yml`:
 ```yaml
 lint_dockerfile:
   image: hadolint/hadolint:latest-debian
+  # image: ghcr.io/hadolint/hadolint:latest-debian
   script:
     - hadolint Dockerfile
 ```
+<!--lint disable remark-lint-maximum-line-length-->
+Moreover, you can publish a [gitlab compatible codeclimate report](https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html#implementing-a-custom-tool) 
+as follows:
+
+```yaml
+docker-hadolint:
+  image: hadolint/hadolint:latest-debian
+  script:
+    - mkdir -p reports
+    - hadolint -f gitlab_codeclimate Dockerfile > reports/hadolint-$(md5sum Dockerfile | cut -d" " -f1).json
+  artifacts:
+    name: "$CI_JOB_NAME artifacts from $CI_PROJECT_NAME on $CI_COMMIT_REF_SLUG"
+    expire_in: 1 day
+    when: always
+    reports:
+      codequality:
+        - "reports/*"
+    paths:
+      - "reports/*"
+```
+
+This way, a widget will be integrated to your merge requests alerting potential changes.
 
 ### Drone CI
 
@@ -102,6 +131,7 @@ Add the following job to your project's `.drone.yml` pipeline (drone version 0.8
   hadolint:
     group: validate
     image: hadolint/hadolint:latest-debian
+    # image: ghcr.io/hadolint/hadolint:latest-debian
     commands:
       - hadolint --version
       - hadolint Dockerfile
@@ -112,6 +142,7 @@ Add the following job to your project's `.drone.yml` pipeline (drone version 1.0
 ```yaml
   - name: hadolint
     image: hadolint/hadolint:latest-debian
+    # image: ghcr.io/hadolint/hadolint:latest-debian
     commands:
       - hadolint --version
       - hadolint  Dockerfile
@@ -145,6 +176,7 @@ stage ("lint dockerfile") {
     agent {
         docker {
             image 'hadolint/hadolint:latest-debian'
+            //image 'ghcr.io/hadolint/hadolint:latest-debian'
         }
     }
     steps {
@@ -165,6 +197,7 @@ You can add an hadolint container to pod definition:
 ```yaml
 - name: hadolint
   image: hadolint/hadolint:latest-debian
+  # image: ghcr.io/hadolint/hadolint:latest-debian
   imagePullPolicy: Always
   command:
     - cat
@@ -197,6 +230,7 @@ pipelines:
   default:
     - step:
         image: hadolint/hadolint:latest-debian
+        # image: ghcr.io/hadolint/hadolint:latest-debian
         script:
           - hadolint Dockerfile
 ```
@@ -264,6 +298,43 @@ to
 if docker run --rm -i hadolint/hadolint < "%d/%f"
 | sed -re 's|^/dev/stdin:([0-9]*)|%d/%f:\1:WARNING:|'
 | grep -EC100 ':WARNING:' ; then exit 1 ; else exit 0 ; fi
+```
+
+or
+
+```sh
+if docker run --rm -i ghcr.io/hadolint/hadolint < "%d/%f"
+| sed -re 's|^/dev/stdin:([0-9]*)|%d/%f:\1:WARNING:|'
+| grep -EC100 ':WARNING:' ; then exit 1 ; else exit 0 ; fi
+```
+
+## Version Control
+
+### pre-commit
+
+[pre-commit](https://pre-commit.com) is a framework for managing and maintaining multi-language Git
+pre-commit hooks.
+
+Hadolint is available as a pre-commit hook.
+
+If you have the `hadolint` binary installed locally, add this to your `.pre-commit-config.yaml` in
+your repository:
+```yaml
+---
+repos:
+  - repo: https://github.com/hadolint/hadolint
+    rev: master
+    hooks:
+      - id: hadolint
+```
+or alternatively use this to run Hadolint with Docker:
+```yaml
+---
+repos:
+  - repo: https://github.com/hadolint/hadolint
+    rev: master
+    hooks:
+      - id: hadolint-docker
 ```
 
 ## Other

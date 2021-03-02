@@ -1,5 +1,4 @@
-[![Linux/OSX Build Status][travis-img]][travis]
-[![Windows Build status][appveyor-img]][appveyor]
+[![Build Status][github-actions-img]][github-actions]
 [![GPL-3 licensed][license-img]][license]
 [![GitHub release][release-img]][release]
 [![Github downloads][downloads-img]]()
@@ -32,7 +31,9 @@ platforms.
 Just pipe your `Dockerfile` to `docker run`:
 
 ```bash
-docker run --rm -i hadolint/hadolint < Dockerfile
+$ docker run --rm -i hadolint/hadolint < Dockerfile
+# or
+$ docker run --rm -i ghcr.io/hadolint/hadolint < Dockerfile
 ```
 
 ## Install
@@ -56,15 +57,20 @@ scoop install hadolint
 As shown before, `hadolint` is available as a Docker container:
 
 ```bash
-docker pull hadolint/hadolint
+$ docker pull hadolint/hadolint
+# or
+$ docker pull ghcr.io/hadolint/hadolint
 ```
 
 If you need a Docker container with shell access, use the Debian or Alpine
 variants of the Docker image:
 
 ```bash
-docker pull hadolint/hadolint:latest-debian
-docker pull hadolint/hadolint:latest-alpine
+$ docker pull hadolint/hadolint:latest-debian
+$ docker pull hadolint/hadolint:latest-alpine
+# or
+$ docker pull ghcr.io/hadolint/hadolint:latest-debian
+$ docker pull ghcr.io/hadolint/hadolint:latest-alpine
 ```
 
 You can also build `hadolint` locally. You need [Haskell][] and the [stack][]
@@ -121,6 +127,15 @@ the `--config` option
 hadolint --config /path/to/config.yaml Dockerfile
 ```
 
+To pass a custom configuration file (using relative or absolute path) to a container,
+use the following command:
+
+```bash
+$ docker run --rm -i -v ./your/path/to/hadolint.yaml:/root/.config/hadolint.yaml hadolint/hadolint < Dockerfile
+# or
+$ docker run --rm -i -v ./your/path/to/hadolint.yaml:/root/.config/hadolint.yaml ghcr.io/hadolint/hadolint < Dockerfile
+```
+
 ## Inline ignores
 
 It is also possible to ignore rules by using a special comment directly above the Dockerfile
@@ -140,12 +155,13 @@ Inline ignores will only work if place directly above the instruction.
 ## Integrations
 
 To get most of `hadolint` it is useful to integrate it as a check to your CI
-or to your editor to lint your `Dockerfile` as you write it. See our
-[Integration][] docs.
+or to your editor, or as a pre-commit hook, to lint your `Dockerfile` as you
+write it. See our [Integration][] docs.
 
 - [Code Review Platform Integrations][]
 - [Continuous Integrations][]
 - [Editor Integrations][]
+- [Version Control Integrations][]
 
 ## Rules
 
@@ -192,6 +208,21 @@ Please [create an issue][] if you have an idea for a good rule.
 | [DL3027](https://github.com/hadolint/hadolint/wiki/DL3027)   | Do not use `apt` as it is meant to be a end-user tool, use `apt-get` or `apt-cache` instead                                                         |
 | [DL3028](https://github.com/hadolint/hadolint/wiki/DL3028)   | Pin versions in gem install. Instead of `gem install <gem>` use `gem install <gem>:<version>`                                                       |
 | [DL3029](https://github.com/hadolint/hadolint/wiki/DL3029)   | Do not use --platform flag with FROM.                                                                                                               |
+| [DL3030](https://github.com/hadolint/hadolint/wiki/DL3030)   | Use the `-y` switch to avoid manual input `yum install -y <package>`                                                                                |
+| [DL3031](https://github.com/hadolint/hadolint/wiki/DL3031)   | Do not use `yum update`                                                                                                                             |
+| [DL3032](https://github.com/hadolint/hadolint/wiki/DL3032)   | `yum clean all` missing after yum command.                                                                                                          |
+| [DL3033](https://github.com/hadolint/hadolint/wiki/DL3033)   | Specify version with `yum install -y <package>-<version>`                                                                                           |
+| [DL3034](https://github.com/hadolint/hadolint/wiki/DL3034)   | Non-interactive switch missing from `zypper` command: `zypper install -y`                                                                           |
+| [DL3035](https://github.com/hadolint/hadolint/wiki/DL3035)   | Do not use `zypper update`.                                                                                                                         |
+| [DL3036](https://github.com/hadolint/hadolint/wiki/DL3036)   | `zypper clean` missing after zypper use.                                                                                                            |
+| [DL3037](https://github.com/hadolint/hadolint/wiki/DL3037)   | Specify version with `zypper install -y <package>[=]<version>`.                                                                                     |
+| [DL3038](https://github.com/hadolint/hadolint/wiki/DL3038)   | Use the `-y` switch to avoid manual input `dnf install -y <package>`                                                                                |
+| [DL3039](https://github.com/hadolint/hadolint/wiki/DL3039)   | Do not use `dnf update`                                                                                                                             |
+| [DL3040](https://github.com/hadolint/hadolint/wiki/DL3040)   | `dnf clean all` missing after dnf command.                                                                                                          |
+| [DL3041](https://github.com/hadolint/hadolint/wiki/DL3041)   | Specify version with `dnf install -y <package>-<version>`                                                                                           |
+| [DL3042](https://github.com/hadolint/hadolint/wiki/DL3042)   | Avoid cache directory with `pip install --no-cache-dir <package>`.                                                                                  |
+| [DL3043](https://github.com/hadolint/hadolint/wiki/DL3043)   | `ONBUILD`, `FROM` or `MAINTAINER` triggered from within `ONBUILD` instruction.                                                                      |
+| [DL3044](https://github.com/hadolint/hadolint/wiki/DL3044)   | Do not refer to an environment variable within the same `ENV` statement where it is defined.                                                        |
 | [DL4000](https://github.com/hadolint/hadolint/wiki/DL4000)   | MAINTAINER is deprecated.                                                                                                                           |
 | [DL4001](https://github.com/hadolint/hadolint/wiki/DL4001)   | Either use Wget or Curl but not both.                                                                                                               |
 | [DL4003](https://github.com/hadolint/hadolint/wiki/DL4003)   | Multiple `CMD` instructions found.                                                                                                                  |
@@ -291,10 +322,8 @@ a look at [Syntax.hs][] in the `language-docker` project to see the AST definiti
 - projectatomic/[dockerfile_lint](https://github.com/projectatomic/dockerfile_lint/)
 
 <!-- References -->
-[travis-img]: https://travis-ci.org/hadolint/hadolint.svg?branch=master
-[travis]: https://travis-ci.org/hadolint/hadolint
-[appveyor-img]: https://ci.appveyor.com/api/projects/status//github/hadolint/hadolint?svg=true&branch=master
-[appveyor]: https://ci.appveyor.com/project/hadolint/hadolint/branch/master
+[github-actions-img]: https://github.com/hadolint/hadolint/workflows/Haskell%20Tests/badge.svg?branch=master
+[github-actions]: https://travis-ci.org/hadolint/hadolint/actions
 [license-img]: https://img.shields.io/badge/license-GPL--3-blue.svg
 [license]: https://tldrlegal.com/l/gpl-3.0
 [release-img]: https://img.shields.io/github/release/hadolint/hadolint.svg
@@ -309,6 +338,7 @@ a look at [Syntax.hs][] in the `language-docker` project to see the AST definiti
 [code review platform integrations]: docs/INTEGRATION.md#code-review
 [continuous integrations]: docs/INTEGRATION.md#continuous-integration
 [editor integrations]: docs/INTEGRATION.md#editors
+[version control integrations]: docs/INTEGRATION.md#version-control
 [create an issue]: https://github.com/hadolint/hadolint/issues/new
 [dockerfile reference]: http://docs.docker.com/engine/reference/builder/
 [syntax.hs]: https://www.stackage.org/haddock/nightly-2018-01-07/language-docker-2.0.1/Language-Docker-Syntax.html
