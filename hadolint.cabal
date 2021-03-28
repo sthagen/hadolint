@@ -4,10 +4,10 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 06df88cbceaf76da3599a8943568f912b17a63d1795839eb4da974832e1ae0d4
+-- hash: aa46b173e0c30014808a39481ef96f5cfc3d04d9aa8f55e8cb9f3b664b729b75
 
 name:           hadolint
-version:        1.23.0
+version:        2.0.0
 synopsis:       Dockerfile Linter JavaScript API
 description:    A smarter Dockerfile linter that helps you build best practice Docker images.
 category:       Development
@@ -40,8 +40,75 @@ library
       Hadolint.Formatter.Format
       Hadolint.Formatter.Json
       Hadolint.Formatter.TTY
+      Hadolint.Ignore
       Hadolint.Lint
-      Hadolint.Rules
+      Hadolint.Process
+      Hadolint.Rule
+      Hadolint.Rule.DL3000
+      Hadolint.Rule.DL3001
+      Hadolint.Rule.DL3002
+      Hadolint.Rule.DL3003
+      Hadolint.Rule.DL3004
+      Hadolint.Rule.DL3005
+      Hadolint.Rule.DL3006
+      Hadolint.Rule.DL3007
+      Hadolint.Rule.DL3008
+      Hadolint.Rule.DL3009
+      Hadolint.Rule.DL3010
+      Hadolint.Rule.DL3011
+      Hadolint.Rule.DL3012
+      Hadolint.Rule.DL3013
+      Hadolint.Rule.DL3014
+      Hadolint.Rule.DL3015
+      Hadolint.Rule.DL3016
+      Hadolint.Rule.DL3017
+      Hadolint.Rule.DL3018
+      Hadolint.Rule.DL3019
+      Hadolint.Rule.DL3020
+      Hadolint.Rule.DL3021
+      Hadolint.Rule.DL3022
+      Hadolint.Rule.DL3023
+      Hadolint.Rule.DL3024
+      Hadolint.Rule.DL3025
+      Hadolint.Rule.DL3026
+      Hadolint.Rule.DL3027
+      Hadolint.Rule.DL3028
+      Hadolint.Rule.DL3029
+      Hadolint.Rule.DL3030
+      Hadolint.Rule.DL3031
+      Hadolint.Rule.DL3032
+      Hadolint.Rule.DL3033
+      Hadolint.Rule.DL3034
+      Hadolint.Rule.DL3035
+      Hadolint.Rule.DL3036
+      Hadolint.Rule.DL3037
+      Hadolint.Rule.DL3038
+      Hadolint.Rule.DL3039
+      Hadolint.Rule.DL3040
+      Hadolint.Rule.DL3041
+      Hadolint.Rule.DL3042
+      Hadolint.Rule.DL3043
+      Hadolint.Rule.DL3044
+      Hadolint.Rule.DL3045
+      Hadolint.Rule.DL3046
+      Hadolint.Rule.DL3047
+      Hadolint.Rule.DL3048
+      Hadolint.Rule.DL3049
+      Hadolint.Rule.DL3050
+      Hadolint.Rule.DL3051
+      Hadolint.Rule.DL3052
+      Hadolint.Rule.DL3053
+      Hadolint.Rule.DL3054
+      Hadolint.Rule.DL3055
+      Hadolint.Rule.DL3056
+      Hadolint.Rule.DL3057
+      Hadolint.Rule.DL4000
+      Hadolint.Rule.DL4001
+      Hadolint.Rule.DL4003
+      Hadolint.Rule.DL4004
+      Hadolint.Rule.DL4005
+      Hadolint.Rule.DL4006
+      Hadolint.Rule.Shellcheck
       Hadolint.Shell
   other-modules:
       Paths_hadolint
@@ -49,12 +116,13 @@ library
       Paths_hadolint
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -optP-Wno-nonportable-include-path
+  default-extensions: OverloadedStrings NamedFieldPuns DeriveGeneric DeriveAnyClass RecordWildCards StrictData ScopedTypeVariables PatternSynonyms
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -optP-Wno-nonportable-include-path -flate-dmd-anal
   build-depends:
-      HsYAML
+      Cabal
+    , HsYAML
     , ShellCheck >=0.7.1
     , aeson
-    , async
     , base >=4.8 && <5
     , bytestring
     , colourista
@@ -63,13 +131,20 @@ library
     , deepseq ==1.4.4.*
     , directory >=1.3.0
     , filepath
+    , foldl
     , ilist
     , language-docker >=9.1.3 && <10
     , megaparsec >=9.0.0
     , mtl
+    , network-uri
     , parallel
+    , parsec >=3.1.14
+    , semver
+    , spdx
     , split >=0.2
     , text
+    , time
+    , timerep >=2.0
     , void
   default-language: Haskell2010
 
@@ -79,7 +154,8 @@ executable hadolint
       Paths_hadolint
   hs-source-dirs:
       app
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -optP-Wno-nonportable-include-path -O2 -threaded -rtsopts "-with-rtsopts=-N5 -A4m"
+  default-extensions: OverloadedStrings NamedFieldPuns DeriveGeneric DeriveAnyClass RecordWildCards StrictData ScopedTypeVariables PatternSynonyms
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -optP-Wno-nonportable-include-path -flate-dmd-anal -O2 -threaded -rtsopts "-with-rtsopts=-N5 -A4m"
   build-depends:
       base >=4.8 && <5
     , containers
@@ -98,10 +174,78 @@ test-suite hadolint-unit-tests
   main-is: Spec.hs
   other-modules:
       ConfigSpec
+      DL3000
+      DL3001
+      DL3002
+      DL3003
+      DL3004
+      DL3005
+      DL3006
+      DL3007
+      DL3008
+      DL3009
+      DL3010
+      DL3011
+      DL3012
+      DL3013
+      DL3014
+      DL3015
+      DL3016
+      DL3017
+      DL3018
+      DL3019
+      DL3020
+      DL3021
+      DL3022
+      DL3023
+      DL3024
+      DL3025
+      DL3026
+      DL3027
+      DL3028
+      DL3029
+      DL3030
+      DL3031
+      DL3032
+      DL3033
+      DL3034
+      DL3035
+      DL3036
+      DL3037
+      DL3038
+      DL3039
+      DL3040
+      DL3041
+      DL3042
+      DL3043
+      DL3044
+      DL3045
+      DL3046
+      DL3047
+      DL3048
+      DL3049
+      DL3050
+      DL3051
+      DL3052
+      DL3053
+      DL3054
+      DL3055
+      DL3056
+      DL3057
+      DL4000
+      DL4001
+      DL4003
+      DL4004
+      DL4005
+      DL4006
+      Helpers
+      Shellcheck
+      ShellSpec
       Paths_hadolint
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -optP-Wno-nonportable-include-path
+  default-extensions: OverloadedStrings NamedFieldPuns DeriveGeneric DeriveAnyClass RecordWildCards StrictData ScopedTypeVariables PatternSynonyms ImplicitParams OverloadedLists
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -optP-Wno-nonportable-include-path -flate-dmd-anal
   build-depends:
       HUnit >=1.2
     , HsYAML
@@ -109,6 +253,8 @@ test-suite hadolint-unit-tests
     , aeson
     , base >=4.8 && <5
     , bytestring >=0.10
+    , containers
+    , foldl
     , hadolint
     , hspec
     , language-docker >=9.1.3 && <10

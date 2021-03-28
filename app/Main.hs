@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -5,19 +6,24 @@
 module Main where
 
 import Control.Applicative
-import Data.String (IsString (fromString))
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Map as Map
+import Data.Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import Data.String (IsString (fromString))
+import qualified Data.Text as Text
 import qualified Data.Version
 import qualified Development.GitRev
 import qualified Hadolint
-import Data.Maybe
+import qualified Hadolint.Rule as Rule
 import Options.Applicative
   ( Parser,
     action,
     argument,
     completeWith,
+    eitherReader,
     execParser,
     fullDesc,
     header,
@@ -29,6 +35,7 @@ import Options.Applicative
     metavar,
     option,
     progDesc,
+    ReadM,
     short,
     showDefaultWith,
     str,
@@ -85,6 +92,9 @@ parseOptions =
 
     nocolor = switch (long "no-color" <> help "Don't colorize output")
 
+    strictlabels = switch (long "strict-labels"
+        <> help "Do not permit labels other than specified in `label-schema`")
+
     configFile =
       optional
         ( strOption
@@ -108,37 +118,37 @@ parseOptions =
     errorList =
       many
         ( strOption
-          ( long "error"
-              <> help "Make the rule `RULECODE` have the level `error`"
-              <> metavar "RULECODE"
-          )
+            ( long "error"
+                <> help "Make the rule `RULECODE` have the level `error`"
+                <> metavar "RULECODE"
+            )
         )
 
     warningList =
       many
         ( strOption
-          ( long "warning"
-              <> help "Make the rule `RULECODE` have the level `warning`"
-              <> metavar "RULECODE"
-          )
+            ( long "warning"
+                <> help "Make the rule `RULECODE` have the level `warning`"
+                <> metavar "RULECODE"
+            )
         )
 
     infoList =
       many
         ( strOption
-          ( long "info"
-              <> help "Make the rule `RULECODE` have the level `info`"
-              <> metavar "RULECODE"
-          )
+            ( long "info"
+                <> help "Make the rule `RULECODE` have the level `info`"
+                <> metavar "RULECODE"
+            )
         )
 
     styleList =
       many
         ( strOption
-          ( long "style"
-              <> help "Make the rule `RULECODE` have the level `style`"
-              <> metavar "RULECODE"
-          )
+            ( long "style"
+                <> help "Make the rule `RULECODE` have the level `style`"
+                <> metavar "RULECODE"
+            )
         )
 
     ignoreList =
@@ -161,8 +171,22 @@ parseOptions =
         <*> ignoreList
         <*> parseRulesConfig
 
+    labels = Map.fromList
+        <$> many
+          ( option readSingleLabelSchema
+              ( long "require-label"
+                  <> help "The option --require-label=label:format makes Hadolint check that the label `label` conforms to format requirement `format`"
+                  <> metavar "LABELSCHEMA (e.g. maintainer:text)"
+              )
+          )
+
     parseRulesConfig =
-      Hadolint.RulesConfig . Set.fromList . fmap fromString
+      Hadolint.RulesConfig
+        <$> parseAllowedRegistries
+        <*> labels
+        <*> strictlabels
+
+    parseAllowedRegistries = Set.fromList . fmap fromString
         <$> many
           ( strOption
               ( long "trusted-registry"
@@ -171,20 +195,31 @@ parseOptions =
               )
           )
 
+type SingleLabelSchema = (Rule.LabelName, Rule.LabelType)
+
+readSingleLabelSchema :: ReadM SingleLabelSchema
+readSingleLabelSchema = eitherReader $ \s -> labelParser (Text.pack s)
+
+labelParser :: Text.Text -> Either String (Rule.LabelName, Rule.LabelType)
+labelParser l =
+    case Bifunctor.second (Rule.read . Text.drop 1) $ Text.breakOn ":" l of
+      (ln, Right lt) -> Right (ln, lt)
+      (_, Left e) -> Left $ Text.unpack e
+
 noFailure :: Hadolint.Result s e -> Bool
-noFailure (Hadolint.Result Seq.Empty Seq.Empty) = True
+noFailure (Hadolint.Result _ Seq.Empty Seq.Empty) = True
 noFailure _ = False
 
-exitProgram :: CommandOptions -> Hadolint.Result s e -> IO()
+exitProgram :: Foldable f => CommandOptions -> f (Hadolint.Result s e) -> IO ()
 exitProgram cmd res
-  | noFail cmd                                 = exitSuccess
+  | noFail cmd = exitSuccess
   | Hadolint.shallSkipErrorStatus (format cmd) = exitSuccess
-  | noFailure res                              = exitSuccess
-  | otherwise                                  = exitFailure
+  | all noFailure res = exitSuccess
+  | otherwise = exitFailure
 
-runLint :: CommandOptions -> Hadolint.LintOptions -> NonEmpty.NonEmpty String -> IO()
+runLint :: CommandOptions -> Hadolint.LintOptions -> NonEmpty.NonEmpty String -> IO ()
 runLint cmd conf files = do
-  res <-  Hadolint.lint conf files
+  res <- Hadolint.lintIO conf files
   noColorEnv <- lookupEnv "NO_COLOR"
   let noColor = nocolor cmd || isJust noColorEnv
   Hadolint.printResults (format cmd) noColor res
