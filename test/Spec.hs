@@ -59,11 +59,13 @@ import qualified DL3055
 import qualified DL3056
 import qualified DL3057
 import qualified DL3058
+import qualified DL3059
 import qualified DL4001
 import qualified DL4003
 import qualified DL4004
 import qualified DL4005
 import qualified DL4006
+import Hadolint.Formatter.Format (errorMessage)
 import Hadolint.Formatter.TTY (formatError)
 import Helpers
 import Language.Docker.Parser
@@ -85,6 +87,13 @@ main =
                 <> "USER, VOLUME, WORKDIR, or end of input "
         case ast of
           Left err -> assertEqual "Unexpected error msg" expectedMsg (formatError err)
+          Right _ -> assertFailure "AST should fail parsing"
+    describe "errorMessage" $
+      it "display just the error message" $ do
+        let ast = parseText "RUNNN"
+            expectedMsg = "missing whitespace"
+        case ast of
+          Left err -> assertEqual "Unexpected error msg" expectedMsg (errorMessage err)
           Right _ -> assertFailure "AST should fail parsing"
     --
     describe "Rules can be ignored with inline comments" $ do
@@ -220,6 +229,7 @@ main =
     DL3056.tests
     DL3057.tests
     DL3058.tests
+    DL3059.tests
     DL4001.tests
     DL4003.tests
     DL4004.tests

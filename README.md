@@ -36,6 +36,10 @@ $ docker run --rm -i hadolint/hadolint < Dockerfile
 $ docker run --rm -i ghcr.io/hadolint/hadolint < Dockerfile
 ```
 
+or if you are using Windows PowerShell:
+```powershell
+> cat .\Dockerfile | docker run --rm -i hadolint/hadolint
+```
 ## Install
 
 You can download prebuilt binaries for OSX, Windows and Linux from the latest
@@ -107,6 +111,21 @@ trustedRegistries:
   - my-company.com:5000
 ```
 
+If you want to override the severity of specific rules, you can do that too:
+```yaml
+override:
+  error:
+    - DL3001
+    - DL3002
+  warning:
+    - DL3042
+    - DL3033
+  info:
+    - DL3032
+  style:
+    - DL3015
+```
+
 Configuration files can be used globally or per project. By default, `hadolint` will look for
 a configuration file in the current directory with the name `.hadolint.yaml`
 
@@ -165,6 +184,7 @@ or via config file:
 ```yaml
 label-schema:
   author: text
+  contact: email
   created: rfc3339
   version: semver
   documentation: url
@@ -181,6 +201,7 @@ The value of a label can be either of `text`, `url`, `semver`, `hash` or
 | url     | A URI as described in [RFC 3986][rfc3986]          |
 | hash    | Either a short or a long [Git hash][githash]       |
 | spdx    | An [SPDX license identifier][spdxid]               |
+| email   | An email address conforming to [RFC 5322][rfc5322] |
 
 By default, Hadolint ignores any label not specified in the label schema. To
 warn on such additional labels, turn on strict labels:
@@ -239,7 +260,7 @@ Please [create an issue][] if you have an idea for a good rule.
 | [DL3002](https://github.com/hadolint/hadolint/wiki/DL3002)   | Last user should not be root.                                                                                                                       |
 | [DL3003](https://github.com/hadolint/hadolint/wiki/DL3003)   | Use WORKDIR to switch to a directory.                                                                                                               |
 | [DL3004](https://github.com/hadolint/hadolint/wiki/DL3004)   | Do not use sudo as it leads to unpredictable behavior. Use a tool like gosu to enforce root.                                                        |
-| [DL3005](https://github.com/hadolint/hadolint/wiki/DL3005)   | Do not use apt-get upgrade or dist-upgrade.                                                                                                         |
+| [DL3005](https://github.com/hadolint/hadolint/wiki/DL3005)   | Do not use apt-get dist-upgrade.                                                                                                                    |
 | [DL3006](https://github.com/hadolint/hadolint/wiki/DL3006)   | Always tag the version of an image explicitly.                                                                                                      |
 | [DL3007](https://github.com/hadolint/hadolint/wiki/DL3007)   | Using latest is prone to errors if the image will ever update. Pin the version explicitly to a release tag.                                         |
 | [DL3008](https://github.com/hadolint/hadolint/wiki/DL3008)   | Pin versions in apt-get install.                                                                                                                    |
@@ -293,6 +314,8 @@ Please [create an issue][] if you have an idea for a good rule.
 | [DL3056](https://github.com/hadolint/hadolint/wiki/DL3056)   | Label `<label>` does not conform to semantic versioning.                                                                                            |
 | [DL3057](https://github.com/hadolint/hadolint/wiki/DL3057)   | `HEALTHCHECK` instruction missing.                                                                                                                  |
 | [DL3058](https://github.com/hadolint/hadolint/wiki/DL3058)   | Label `<label>` is not a valid email format - must be conform to RFC5322.                                                                           |
+| [DL3059](https://github.com/hadolint/hadolint/wiki/DL3059)   | Multiple consecutive `RUN` instructions. Consider consolidation.                                                                                    |
+| [DL3060](https://github.com/hadolint/hadolint/wiki/DL3060)   | `yarn cache clean` missing after `yarn install` was run.                                                                                            |
 | [DL4000](https://github.com/hadolint/hadolint/wiki/DL4000)   | MAINTAINER is deprecated.                                                                                                                           |
 | [DL4001](https://github.com/hadolint/hadolint/wiki/DL4001)   | Either use Wget or Curl but not both.                                                                                                               |
 | [DL4003](https://github.com/hadolint/hadolint/wiki/DL4003)   | Multiple `CMD` instructions found.                                                                                                                  |
@@ -417,3 +440,4 @@ a look at [Syntax.hs][] in the `language-docker` project to see the AST definiti
 [rfc3986]: https://www.ietf.org/rfc/rfc3986.txt
 [githash]: https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection
 [spdxid]: https://spdx.org/licenses/
+[rfc5322]: https://www.ietf.org/rfc/rfc5322.txt
