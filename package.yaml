@@ -1,5 +1,5 @@
 name: hadolint
-version: "2.3.0"
+version: "2.6.0"
 synopsis: Dockerfile Linter JavaScript API
 description: A smarter Dockerfile linter that helps you build best practice Docker images.
 category: Development
@@ -26,7 +26,7 @@ ghc-options:
 dependencies:
   - base >=4.8 && <5
   - megaparsec >= 9.0.0
-  - language-docker >=9.3.0 && < 10
+  - language-docker >=10.0.0 && <11
 default-extensions:
   - OverloadedStrings
   - NamedFieldPuns
@@ -78,6 +78,8 @@ executables:
       - text
       - containers
     ghc-options: -O2 -threaded -rtsopts "-with-rtsopts=-N5 -A4m"
+    default-extensions:
+      - TemplateHaskell
     when:
       # OS X does not support static build https://developer.apple.com/library/content/qa/qa1118
       - condition: "flag(static) && !(os(osx))"

@@ -32,7 +32,7 @@ jobs:
       run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
 
     - name: Save Release URL File for publish
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: release_url.txt
         path: release_url.txt
@@ -74,7 +74,7 @@ jobs:
     # cache
 
     - name: Cache store
-      uses: actions/cache@v2.1.5
+      uses: actions/cache@v2.1.6
       with:
         path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
         key: ${{ runner.os }}-${{ hashFiles('cabal.project.freeze') }}
@@ -114,7 +114,7 @@ jobs:
         file: ${{ env.BINARY_PATH }}
 
     - name: Load Release URL File from release job
-      uses: actions/download-artifact@v2.0.9
+      uses: actions/download-artifact@v2.0.10
       with:
         name: release_url.txt
 

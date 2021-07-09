@@ -1,5 +1,6 @@
 module Hadolint.Config
   ( applyConfig,
+    getConfig,
     ConfigFile (..),
     OverrideConfig (..),
   )
@@ -47,17 +48,22 @@ data ConfigFile = ConfigFile
     ignoredRules :: Maybe [Lint.IgnoreRule],
     trustedRegistries :: Maybe [Lint.TrustedRegistry],
     labelSchemaConfig :: Maybe Rule.LabelSchema,
-    strictLabelSchema :: Maybe Bool
+    strictLabelSchema :: Maybe Bool,
+    failureThreshold :: Maybe Rule.DLSeverity
   }
   deriving (Show, Eq, Generic)
 
 instance Yaml.FromYAML OverrideConfig where
-  parseYAML = Yaml.withMap "OverrideConfig" $ \m ->
-    OverrideConfig
-      <$> m .:? "error"
-      <*> m .:? "warning"
-      <*> m .:? "info"
-      <*> m .:? "style"
+  parseYAML = Yaml.withMap "OverrideConfig" $ \m -> do
+    err <- m .:? "error"
+    wrn <- m .:? "warning"
+    inf <- m .:? "info"
+    sty <- m .:? "style"
+    let overrideErrorRules = coerce (err :: Maybe [Text.Text])
+        overrideWarningRules = coerce (wrn :: Maybe [Text.Text])
+        overrideInfoRules = coerce (inf :: Maybe [Text.Text])
+        overrideStyleRules = coerce (sty:: Maybe [Text.Text])
+    return OverrideConfig {..}
 
 instance Yaml.FromYAML ConfigFile where
   parseYAML = Yaml.withMap "ConfigFile" $ \m -> do
@@ -67,6 +73,7 @@ instance Yaml.FromYAML ConfigFile where
     trustedRegistries <- m .:? "trustedRegistries"
     labelSchemaConfig <- m .:? "label-schema"
     strictLabelSchema <- m .:? "strict-labels"
+    failureThreshold <- m .:? "failure-threshold"
     return ConfigFile {..}
 
 -- | If both the ignoreRules and rulesConfig properties of Lint options are empty
@@ -77,19 +84,10 @@ applyConfig :: Maybe FilePath -> Lint.LintOptions -> IO (Either String Lint.Lint
 applyConfig maybeConfig o
   | not (Prelude.null (Lint.ignoreRules o)) && Lint.rulesConfig o /= mempty = return (Right o)
   | otherwise = do
-    theConfig <-
-      case maybeConfig of
-        Nothing -> findConfig
-        c -> return c
-    case theConfig of
+    case maybeConfig of
       Nothing -> return (Right o)
       Just config -> parseAndApply config
   where
-    findConfig = do
-      localConfigFile <- (</> ".hadolint.yaml") <$> getCurrentDirectory
-      configFile <- getXdgDirectory XdgConfig "hadolint.yaml"
-      listToMaybe <$> filterM doesFileExist [localConfigFile, configFile]
-
     parseAndApply :: FilePath -> IO (Either String Lint.LintOptions)
     parseAndApply configFile = do
       contents <- Bytes.readFile configFile
@@ -106,6 +104,7 @@ applyConfig maybeConfig o
         overrideInfo <- overrideInfoRules <|> Just mempty
         overrideStyle <- overrideStyleRules <|> Just mempty
         overrideIgnored <- ignoredRules <|> Just mempty
+        overrideThreshold <- failureThreshold <|> Just mempty
 
         trusted <- Set.fromList . coerce <$> (trustedRegistries <|> Just mempty)
         schema <- labelSchemaConfig <|> Just mempty
@@ -125,7 +124,8 @@ applyConfig maybeConfig o
                   { Process.allowedRegistries = Process.allowedRegistries rulesConfig `ifNull` trusted,
                     Process.labelSchema = Process.labelSchema rulesConfig `ifNull` schema,
                     Process.strictLabels = Process.strictLabels rulesConfig || strictLabels
-                  }
+                  },
+            Lint.failThreshold = Lint.failThreshold o <> overrideThreshold
             }
 
     ifNull value override = if null value then override else value
@@ -151,3 +151,20 @@ applyConfig maybeConfig o
           "",
           err
         ]
+
+-- | Gets the configuration file which Hadolint uses
+getConfig :: Maybe FilePath -> IO (Maybe FilePath)
+getConfig maybeConfig =
+  case maybeConfig of
+    Nothing -> findConfig
+    _ -> return maybeConfig
+  where
+    findConfig :: IO (Maybe FilePath)
+    findConfig = do
+      localConfigFiles <- traverse
+                            (\filePath -> (</> filePath) <$> getCurrentDirectory)
+                            (fmap ("."++) acceptedConfigs)
+      configFiles <- traverse (getXdgDirectory XdgConfig) acceptedConfigs
+      listToMaybe <$> filterM doesFileExist (localConfigFiles ++ configFiles)
+      where
+        acceptedConfigs = ["hadolint.yaml", "hadolint.yml"]

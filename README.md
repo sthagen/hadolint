@@ -127,11 +127,12 @@ override:
 ```
 
 Configuration files can be used globally or per project. By default, `hadolint` will look for
-a configuration file in the current directory with the name `.hadolint.yaml`
+a configuration file in the current directory with the name `.hadolint.yaml` or
+`.hadolint.yml`
 
 The global configuration file should be placed in the folder specified by `XDG_CONFIG_HOME`,
-with the name `hadolint.yaml`. In summary, the following locations are valid for the configuration
-file, in order or preference:
+with the name `hadolint.yaml` or `hadolint.yml`. In summary, the following locations are valid
+for the configuration file, in order or preference:
 
 - `$PWD/.hadolint.yaml`
 - `$XDG_CONFIG_HOME/hadolint.yaml`
@@ -150,9 +151,9 @@ To pass a custom configuration file (using relative or absolute path) to a conta
 use the following command:
 
 ```bash
-$ docker run --rm -i -v ./your/path/to/hadolint.yaml:/root/.config/hadolint.yaml hadolint/hadolint < Dockerfile
+$ docker run --rm -i -v /your/path/to/hadolint.yaml:/.config/hadolint.yaml hadolint/hadolint < Dockerfile
 # or
-$ docker run --rm -i -v ./your/path/to/hadolint.yaml:/root/.config/hadolint.yaml ghcr.io/hadolint/hadolint < Dockerfile
+$ docker run --rm -i -v /your/path/to/hadolint.yaml:/.config/hadolint.yaml ghcr.io/hadolint/hadolint < Dockerfile
 ```
 
 ## Inline ignores
